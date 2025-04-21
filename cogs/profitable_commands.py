@@ -25,17 +25,14 @@ class Profitable(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="profitable", description="Find the most profitable items to resell.", guild_ids=[1265341386471899217])
+    @nextcord.slash_command(name="profitable", description="Find the most profitable items.", guild_ids=[1265341386471899217])
     async def profitable(self, interaction: Interaction):
         if not manager.has_access(interaction.user.id):
             await interaction.response.send_message("You need an active license to use this command.", ephemeral=True)
             return
         embed = nextcord.Embed(
-            title=f"{interaction.user.display_name}'s Resell Panel",
-            description=(
-                "These are the most profitable items to resell right now.\n"
-                "Choose a category from the dropdown menu below:"
-            ),
+            title=f"{interaction.user.display_name}'s Item Panel",
+            description="Choose a category from the dropdown menu below:",
             color=nextcord.Color.purple()
         )
         await interaction.response.send_message(embed=embed, view=CategoryView(), ephemeral=True)
@@ -67,28 +64,39 @@ class Profitable(commands.Cog):
         view.add_item(select)
         async def select_callback(interaction2: Interaction):
             cat = select.values[0]
-            items = items_data[cat]["items"]
+            items = items_data.get(cat, {}).get("items", [])
             if not items:
                 await interaction2.response.send_message("No items to edit in this category.", ephemeral=True)
                 return
-            item_options = [nextcord.SelectOption(label=item["name"]) for item in items]
+            item_options = [nextcord.SelectOption(label=item.get("name", "")) for item in items]
             item_select = nextcord.ui.Select(placeholder="Select item to edit...", options=item_options)
             item_view = nextcord.ui.View(timeout=60)
             item_view.add_item(item_select)
             async def item_select_callback(interaction3: Interaction):
                 item_name = item_select.values[0]
+                item_obj = next((i for i in items if i.get("name") == item_name), None)
+                if not item_obj:
+                    await interaction3.response.send_message("Item not found.", ephemeral=True)
+                    return
+                name_val = item_obj.get("name", "")
+                link_val = item_obj.get("link", "")
+                image_val = item_obj.get("image", "")
                 class EditItemModal(nextcord.ui.Modal):
                     def __init__(self):
-                        super().__init__(title=f"Edit {item_name}")
-                        self.add_item(nextcord.ui.TextInput(label="Name", default=item_name, required=True))
-                        self.add_item(nextcord.ui.TextInput(label="Link", default=next((i["link"] for i in items if i["name"] == item_name), ""), required=False))
-                        self.add_item(nextcord.ui.TextInput(label="Purchase Price", default=str(next((i["purchase_price"] for i in items if i["name"] == item_name), "")), required=True))
+                        super().__init__(title=f"Edit {name_val}")
+                        self.add_item(nextcord.ui.TextInput(label="Name", default=name_val, required=True))
+                        self.add_item(nextcord.ui.TextInput(label="Link", default=link_val, required=False))
+                        self.add_item(nextcord.ui.TextInput(label="Image URL", default=image_val, required=False))
                     async def callback(self, interaction4: Interaction):
                         for i in items:
-                            if i["name"] == item_name:
+                            if i.get("name") == item_name:
                                 i["name"] = self.children[0].value
                                 i["link"] = self.children[1].value
-                                i["purchase_price"] = float(self.children[2].value)
+                                image_url = self.children[2].value.strip()
+                                if image_url:
+                                    i["image"] = image_url
+                                elif "image" in i:
+                                    del i["image"]
                         save_items(items_data)
                         await interaction4.response.send_message(f"Item '{item_name}' updated.", ephemeral=True)
                 await interaction3.response.send_modal(EditItemModal())
@@ -111,17 +119,17 @@ class Profitable(commands.Cog):
         view.add_item(select)
         async def select_callback(interaction2: Interaction):
             cat = select.values[0]
-            items = items_data[cat]["items"]
+            items = items_data.get(cat, {}).get("items", [])
             if not items:
                 await interaction2.response.send_message("No items to remove in this category.", ephemeral=True)
                 return
-            item_options = [nextcord.SelectOption(label=item["name"]) for item in items]
+            item_options = [nextcord.SelectOption(label=item.get("name", "")) for item in items]
             item_select = nextcord.ui.Select(placeholder="Select item to remove...", options=item_options)
             item_view = nextcord.ui.View(timeout=60)
             item_view.add_item(item_select)
             async def item_select_callback(interaction3: Interaction):
                 item_name = item_select.values[0]
-                items_data[cat]["items"] = [i for i in items if i["name"] != item_name]
+                items_data[cat]["items"] = [i for i in items if i.get("name") != item_name]
                 save_items(items_data)
                 await interaction3.response.send_message(f"Removed item '{item_name}' from {cat}.", ephemeral=True)
             item_select.callback = item_select_callback
@@ -149,14 +157,28 @@ class CategorySelect(nextcord.ui.Select):
             for cat, desc in CATEGORIES
         ]
         super().__init__(
-            placeholder="Choose a category to resell...",
+            placeholder="Choose a category...",
             min_values=1,
             max_values=1,
             options=options
         )
     async def callback(self, interaction: Interaction):
+        await interaction.response.defer(ephemeral=True)
         category = self.values[0]
-        await interaction.response.send_message(f"You selected: {category}.", ephemeral=True)
+        items_data = load_items()
+        items = items_data.get(category, {}).get("items", [])
+        if not items:
+            await interaction.followup.send(f"No items found in {category}.", ephemeral=True)
+            return
+        for item in items:
+            embed = nextcord.Embed(
+                title=item.get("name", ""),
+                description=f"Click to view item: {item.get('link', '')}",
+                color=nextcord.Color.purple()
+            )
+            if item.get("image"):
+                embed.set_image(url=item["image"])
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
 class AddItemCategoryView(nextcord.ui.View):
     def __init__(self, owner_id):
@@ -174,7 +196,28 @@ class AddItemCategorySelect(nextcord.ui.Select):
         )
         self.owner_id = owner_id
     async def callback(self, interaction: Interaction):
-        await interaction.response.send_message(f"Add item to: {self.values[0]}", ephemeral=True)
+        category = self.values[0]
+        class AddItemModal(nextcord.ui.Modal):
+            def __init__(self):
+                super().__init__(title=f"Add Item to {category}")
+                self.add_item(nextcord.ui.TextInput(label="Name", required=True))
+                self.add_item(nextcord.ui.TextInput(label="Link", required=True))
+                self.add_item(nextcord.ui.TextInput(label="Image URL", required=False))
+            async def callback(self, interaction2: Interaction):
+                items_data = load_items()
+                item = {
+                    "name": self.children[0].value,
+                    "link": self.children[1].value,
+                }
+                image_url = self.children[2].value.strip()
+                if image_url:
+                    item["image"] = image_url
+                if category not in items_data:
+                    items_data[category] = {"items": []}
+                items_data[category]["items"].append(item)
+                save_items(items_data)
+                await interaction2.response.send_message(f"Item '{item['name']}' added to {category}.", ephemeral=True)
+        await interaction.response.send_modal(AddItemModal())
 
 def setup(bot):
     bot.add_cog(Profitable(bot))

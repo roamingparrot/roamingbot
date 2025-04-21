@@ -1,4 +1,3 @@
-print("=== BOT.PY STARTED ===")
 import nextcord
 from nextcord.ext import commands
 from dotenv import load_dotenv

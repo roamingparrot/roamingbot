@@ -2,11 +2,9 @@
   "Sneakers": {
     "items": [
       {
-        "name": "Travis",
-        "link": "google.com",
-        "image": "https://cdn.discordapp.com/attachments/1363475930990772375/1363500122108985585/04476483-ED33-402A-BF17-3B177C160504.png?ex=680641f1&is=6804f071&hm=c94ae7fc9edd8b383919b945394fdc7465651ff10ffe95975bc383717d29746c&",
-        "purchase_price": 21.0,
-        "sell_price": 155.0
+        "name": "Travis lows",
+        "link": "https://www.kickgame.co.uk/collections/travis-scott?filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=",
+        "image": "https://www.kickgame.co.uk/cdn/shop/files/DM7866-202.png"
       }
     ],
     "daily_picks": []
