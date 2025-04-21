@@ -27,9 +27,12 @@ def load_cogs(bot, cogs):
     for cog in cogs:
         bot.load_extension(cog)
 
+initial_extensions = [
+    'cogs.license',
+    'cogs.profitable_commands',
+    'cogs.verify',
+]
+
 if __name__ == "__main__":
-    load_cogs(bot, [
-        'cogs.license',
-        'cogs.profitable_commands',
-    ])
+    load_cogs(bot, initial_extensions)
     bot.run(TOKEN)
