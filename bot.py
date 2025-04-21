@@ -1,8 +1,11 @@
+print("=== BOT.PY STARTED ===")
 import nextcord
 from nextcord.ext import commands
 from dotenv import load_dotenv
 load_dotenv()
 import os
+
+print(f"[DEBUG] VERIFICATION_ROLE_ID in bot.py: {os.getenv('VERIFICATION_ROLE_ID')}")
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
