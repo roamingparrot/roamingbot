@@ -1,0 +1,26 @@
+{
+  "Sneakers": {
+    "items": [
+      {
+        "name": "Travis",
+        "link": "google.com",
+        "image": "https://cdn.discordapp.com/attachments/1363475930990772375/1363500122108985585/04476483-ED33-402A-BF17-3B177C160504.png?ex=680641f1&is=6804f071&hm=c94ae7fc9edd8b383919b945394fdc7465651ff10ffe95975bc383717d29746c&",
+        "purchase_price": 21.0,
+        "sell_price": 155.0
+      }
+    ],
+    "daily_picks": []
+  },
+  "Watches": {
+    "items": [],
+    "daily_picks": []
+  },
+  "Streetwear": {
+    "items": [],
+    "daily_picks": []
+  },
+  "Accessories": {
+    "items": [],
+    "daily_picks": []
+  }
+}
