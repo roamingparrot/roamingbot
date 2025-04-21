@@ -1,8 +1,7 @@
 import nextcord
 from nextcord.ext import commands
-from nextcord import Interaction, ButtonStyle
+from nextcord import Interaction, ButtonStyle, SlashOption
 from nextcord.ui import Button, View
-import os
 
 class VerifyView(View):
     def __init__(self, role_id: int):
@@ -26,19 +25,11 @@ class VerifyView(View):
 class Verify(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Read the verification role ID from the environment
-        try:
-            self.verification_role_id = int(os.getenv("VERIFICATION_ROLE_ID", "0"))
-        except ValueError:
-            self.verification_role_id = 0
 
-    @nextcord.slash_command(description="Verify yourself to get access to the server.")
-    async def verify(self, interaction: Interaction):
-        if not self.verification_role_id:
-            await interaction.send("Verification role not set. Please contact an admin.", ephemeral=True)
-            return
+    @nextcord.slash_command(description="Show a verification button for users to get a role.")
+    async def verify(self, interaction: Interaction, role: nextcord.Role = SlashOption(description="Role to assign when verified")):
         embed = nextcord.Embed(title="Verification", description="Click the button below to verify yourself and get access to the server!", color=0x00ff00)
-        view = VerifyView(self.verification_role_id)
+        view = VerifyView(role.id)
         await interaction.send(embed=embed, view=view, ephemeral=True)
 
 def setup(bot):
